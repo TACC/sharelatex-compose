@@ -1,0 +1,34 @@
+# Stands up a complete sharelatex stack listening on port 8000.
+# Need to run npm install to upgrade the version of mongoose due to a bug
+# (https://github.com/sharelatex/sharelatex-docker-image/issues/7).
+#
+# Instructions:
+# 1. docker-compose up -d
+# 2. docker exec -it sharelatex /bin/bash -c "cd /var/www/sharelatex/web; npm install"
+# 3. docker exec sharelatex /bin/bash -c "cd /var/www/sharelatex/web; grunt create-admin-user --email admin@example.com"
+
+mongo:
+    image: mongo
+    command: --smallfiles
+    name: mongo
+
+redis:
+    image: redis
+    name: redis
+
+sharelatex:
+    image: sharelatex/sharelatex
+    name: sharelatex
+    ports:
+        - "8000:80"
+    volumes:
+        - ~/sharelatex_data:/var/lib/sharelatex
+        - ./package.json:/var/www/sharelatex/web/package.json
+    environment:
+        SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
+        SHARELATEX_REDIS_HOST: redis
+        SHARELATEX_SITE_URL: http://localhost:8000
+    links:
+        - mongo
+        - redis
+
