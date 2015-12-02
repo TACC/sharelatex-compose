@@ -7,28 +7,54 @@
 # 2. docker exec -it sharelatex /bin/bash -c "cd /var/www/sharelatex/web; npm install"
 # 3. docker exec sharelatex /bin/bash -c "cd /var/www/sharelatex/web; grunt create-admin-user --email admin@example.com"
 
+
+sharelatex_mongodb_data:
+    image: mongo:2.6.9
+    entrypoint: /bin/true
+    volumes:
+        - /docker/sharelatex/mongo_data:/data/db
+
 mongo:
-    image: mongo
-    command: --smallfiles
+    image: mongo:2.6.9
     name: mongo
+    volumes_from:
+        - sharelatex_mongodb_data
+
+sharelatex_redis_data:
+    image: redis
+    entrypoint: /bin/true
+    volumes:
+        - /docker/sharelatex/redis_data:/data
 
 redis:
     image: redis
     name: redis
+    command: redis-server --appendonly yes
+    volumes_from:
+        - sharelatex_redis_data
+
+sharelatex_data:
+  image: jstubbs/sharelatex
+  entrypoint: /bin/true
+  volumes:
+    - /docker/sharelatex/data:/var/lib/sharelatex
 
 sharelatex:
-    image: sharelatex/sharelatex
+    image: jstubbs/sharelatex
     name: sharelatex
     ports:
         - "8000:80"
+    volumes_from:
+        - sharelatex_data
     volumes:
-        - ~/sharelatex_data:/var/lib/sharelatex
         - ./package.json:/var/www/sharelatex/web/package.json
     environment:
         SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
         SHARELATEX_REDIS_HOST: redis
-        SHARELATEX_SITE_URL: http://localhost:8000
+        SHARELATEX_SITE_URL: http://129.114.6.49
+        SHARELATEX_ADMIN_EMAIL: jstubbs@tacc.utexas.edu
+        SHARELATEX_REDIS_PORT: 6379
+        
     links:
         - mongo
         - redis
-
